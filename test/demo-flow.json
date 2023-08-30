@@ -1,0 +1,570 @@
+[
+    {
+        "id": "4088c2307516d0c9",
+        "type": "tab",
+        "label": "Flow 1",
+        "disabled": false,
+        "info": "",
+        "env": []
+    },
+    {
+        "id": "c2cb451ff3d06d81",
+        "type": "debug",
+        "z": "4088c2307516d0c9",
+        "name": "",
+        "active": true,
+        "tosidebar": true,
+        "console": true,
+        "tostatus": true,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "payload",
+        "statusType": "auto",
+        "x": 1010,
+        "y": 160,
+        "wires": []
+    },
+    {
+        "id": "7c84491f78a17825",
+        "type": "debug",
+        "z": "4088c2307516d0c9",
+        "name": "",
+        "active": true,
+        "tosidebar": true,
+        "console": true,
+        "tostatus": true,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "payload",
+        "statusType": "auto",
+        "x": 990,
+        "y": 240,
+        "wires": []
+    },
+    {
+        "id": "fc4349211fd4c455",
+        "type": "inject",
+        "z": "4088c2307516d0c9",
+        "name": "config",
+        "props": [
+            {
+                "p": "payload"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "{\"command\":\"config\"}",
+        "payloadType": "json",
+        "x": 150,
+        "y": 360,
+        "wires": [
+            [
+                "c36dc9f8246ff27f"
+            ]
+        ]
+    },
+    {
+        "id": "2d57f20c027d6bc6",
+        "type": "inject",
+        "z": "4088c2307516d0c9",
+        "name": "online_devices",
+        "props": [
+            {
+                "p": "payload"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "{\"command\":\"online_devices\"}",
+        "payloadType": "json",
+        "x": 180,
+        "y": 420,
+        "wires": [
+            [
+                "c36dc9f8246ff27f"
+            ]
+        ]
+    },
+    {
+        "id": "d7e42e98eec73ccc",
+        "type": "inject",
+        "z": "4088c2307516d0c9",
+        "name": "enumerate",
+        "props": [
+            {
+                "p": "payload"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "{\"command\":\"enumerate\"}",
+        "payloadType": "json",
+        "x": 160,
+        "y": 280,
+        "wires": [
+            [
+                "c36dc9f8246ff27f"
+            ]
+        ]
+    },
+    {
+        "id": "ce11eca27758061a",
+        "type": "debug",
+        "z": "4088c2307516d0c9",
+        "name": "",
+        "active": true,
+        "tosidebar": true,
+        "console": true,
+        "tostatus": true,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "payload",
+        "statusType": "auto",
+        "x": 960,
+        "y": 80,
+        "wires": []
+    },
+    {
+        "id": "a4daebd94d0e903a",
+        "type": "bacnet control",
+        "z": "4088c2307516d0c9",
+        "d": true,
+        "name": "",
+        "endpoint": "00cea92918181e4a",
+        "command": {
+            "message": "deviceinfo",
+            "description": "Get device Information",
+            "accepts": "devices"
+        },
+        "bac_type": "control",
+        "parameters": {
+            "devices": [
+                "172.155.0.2"
+            ]
+        },
+        "commands": [
+            {
+                "message": "from_input",
+                "description": "Read command from input",
+                "accepts": false
+            },
+            {
+                "message": "online_devices",
+                "description": "Scan for devices",
+                "accepts": false
+            },
+            {
+                "message": "enumerate",
+                "description": "Read bacnet config in config nodes",
+                "accepts": false
+            },
+            {
+                "message": "config",
+                "description": "Get Bacnet Information",
+                "accepts": false
+            },
+            {
+                "message": "deviceinfo",
+                "description": "Get device Information",
+                "accepts": "devices"
+            },
+            {
+                "message": "datapoints",
+                "description": "Get data point list of device",
+                "accepts": "devices"
+            },
+            {
+                "message": "hello_world_from_nodered",
+                "description": "HelloWorld",
+                "accepts": false
+            }
+        ],
+        "x": 670,
+        "y": 80,
+        "wires": [
+            [
+                "ce11eca27758061a"
+            ]
+        ]
+    },
+    {
+        "id": "4c03bf661e74a2b3",
+        "type": "bacnet out",
+        "z": "4088c2307516d0c9",
+        "d": true,
+        "name": "",
+        "endpoint": "00cea92918181e4a",
+        "command": {
+            "message": "reads",
+            "description": "Read value",
+            "accepts": "datapoints"
+        },
+        "bac_type": "out",
+        "parameters": {
+            "devices": {
+                "172.155.0.2": [
+                    "ANALOG VALUE 1"
+                ]
+            }
+        },
+        "commands": [
+            {
+                "message": "reads",
+                "description": "Read value",
+                "accepts": "datapoints"
+            },
+            {
+                "message": "reads_onlyone",
+                "description": "Read onlyonevalue",
+                "accepts": "datapoints"
+            },
+            {
+                "message": "from_input",
+                "description": "Read command from input",
+                "accepts": false
+            }
+        ],
+        "x": 660,
+        "y": 160,
+        "wires": [
+            [
+                "c2cb451ff3d06d81"
+            ]
+        ]
+    },
+    {
+        "id": "18043b42fedb6777",
+        "type": "bacnet in",
+        "z": "4088c2307516d0c9",
+        "d": true,
+        "name": "",
+        "endpoint": "00cea92918181e4a",
+        "command": {
+            "message": "write",
+            "description": "Write value",
+            "accepts": "values"
+        },
+        "bac_type": "in",
+        "parameters": {
+            "devices": {
+                "172.155.0.2": {
+                    "ANALOG VALUE 1": "2"
+                }
+            }
+        },
+        "commands": [
+            {
+                "message": "write",
+                "description": "Write value",
+                "accepts": "values"
+            },
+            {
+                "message": "from_input",
+                "description": "Read command from input",
+                "accepts": false
+            }
+        ],
+        "x": 690,
+        "y": 240,
+        "wires": [
+            [
+                "7c84491f78a17825"
+            ]
+        ]
+    },
+    {
+        "id": "b10d66c432b666f4",
+        "type": "inject",
+        "z": "4088c2307516d0c9",
+        "name": "write",
+        "props": [
+            {
+                "p": "payload"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "{\"command\":\"write\",\"devices\":{\"172.155.0.2\":{\"ANALOG VALUE 1\":\"3\"}}}",
+        "payloadType": "json",
+        "x": 210,
+        "y": 640,
+        "wires": [
+            [
+                "d446ca1f62dfa8a1"
+            ]
+        ]
+    },
+    {
+        "id": "bb5fe247fef959b3",
+        "type": "inject",
+        "z": "4088c2307516d0c9",
+        "name": "read",
+        "props": [
+            {
+                "p": "payload"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "{\"command\":\"reads\",\"devices\":{\"172.155.0.2\":[\"ANALOG VALUE 1\",\"ANALOG VALUE 2\"]}}",
+        "payloadType": "json",
+        "x": 210,
+        "y": 520,
+        "wires": [
+            [
+                "7233158c57a2e06d"
+            ]
+        ]
+    },
+    {
+        "id": "212609b15f21badd",
+        "type": "debug",
+        "z": "4088c2307516d0c9",
+        "name": "",
+        "active": true,
+        "tosidebar": true,
+        "console": true,
+        "tostatus": true,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "payload",
+        "statusType": "auto",
+        "x": 790,
+        "y": 520,
+        "wires": []
+    },
+    {
+        "id": "d446ca1f62dfa8a1",
+        "type": "bacnet in",
+        "z": "4088c2307516d0c9",
+        "name": "",
+        "endpoint": "00cea92918181e4a",
+        "command": {
+            "message": "from_input",
+            "description": "Read command from input",
+            "accepts": false
+        },
+        "bac_type": "in",
+        "parameters": {},
+        "commands": [
+            {
+                "message": "write",
+                "description": "Write value",
+                "accepts": "values"
+            },
+            {
+                "message": "from_input",
+                "description": "Read command from input",
+                "accepts": false
+            }
+        ],
+        "x": 490,
+        "y": 640,
+        "wires": [
+            [
+                "bac12438660b984a"
+            ]
+        ]
+    },
+    {
+        "id": "bac12438660b984a",
+        "type": "debug",
+        "z": "4088c2307516d0c9",
+        "name": "",
+        "active": true,
+        "tosidebar": true,
+        "console": true,
+        "tostatus": true,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "payload",
+        "statusType": "auto",
+        "x": 790,
+        "y": 640,
+        "wires": []
+    },
+    {
+        "id": "7233158c57a2e06d",
+        "type": "bacnet out",
+        "z": "4088c2307516d0c9",
+        "name": "",
+        "endpoint": "00cea92918181e4a",
+        "command": {
+            "message": "from_input",
+            "description": "Read command from input",
+            "accepts": false
+        },
+        "bac_type": "out",
+        "parameters": {},
+        "commands": [
+            {
+                "message": "reads",
+                "description": "Read value",
+                "accepts": "datapoints"
+            },
+            {
+                "message": "reads_onlyone",
+                "description": "Read onlyonevalue",
+                "accepts": "datapoints"
+            },
+            {
+                "message": "from_input",
+                "description": "Read command from input",
+                "accepts": false
+            }
+        ],
+        "x": 480,
+        "y": 520,
+        "wires": [
+            [
+                "212609b15f21badd"
+            ]
+        ]
+    },
+    {
+        "id": "c36dc9f8246ff27f",
+        "type": "bacnet control",
+        "z": "4088c2307516d0c9",
+        "name": "",
+        "endpoint": "00cea92918181e4a",
+        "command": {
+            "message": "from_input",
+            "description": "Read command from input",
+            "accepts": false
+        },
+        "bac_type": "control",
+        "parameters": {},
+        "commands": [
+            {
+                "message": "from_input",
+                "description": "Read command from input",
+                "accepts": false
+            },
+            {
+                "message": "online_devices",
+                "description": "Scan for devices",
+                "accepts": false
+            },
+            {
+                "message": "enumerate",
+                "description": "Read bacnet config in config nodes",
+                "accepts": false
+            },
+            {
+                "message": "config",
+                "description": "Get Bacnet Information",
+                "accepts": false
+            },
+            {
+                "message": "deviceinfo",
+                "description": "Get device Information",
+                "accepts": "devices"
+            },
+            {
+                "message": "datapoints",
+                "description": "Get data point list of device",
+                "accepts": "devices"
+            },
+            {
+                "message": "hello_world_from_nodered",
+                "description": "HelloWorld",
+                "accepts": false
+            }
+        ],
+        "x": 510,
+        "y": 340,
+        "wires": [
+            [
+                "15417d4604addd59"
+            ]
+        ]
+    },
+    {
+        "id": "15417d4604addd59",
+        "type": "debug",
+        "z": "4088c2307516d0c9",
+        "name": "",
+        "active": true,
+        "tosidebar": true,
+        "console": true,
+        "tostatus": true,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "payload",
+        "statusType": "auto",
+        "x": 790,
+        "y": 360,
+        "wires": []
+    },
+    {
+        "id": "c3fcf6437e3914e8",
+        "type": "inject",
+        "z": "4088c2307516d0c9",
+        "name": "deviceinfo",
+        "props": [
+            {
+                "p": "payload"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "{\"command\":\"deviceinfo\",\"devices\":[\"172.155.0.2\"]}",
+        "payloadType": "json",
+        "x": 140,
+        "y": 220,
+        "wires": [
+            [
+                "c36dc9f8246ff27f"
+            ]
+        ]
+    },
+    {
+        "id": "db00b255aabd68ff",
+        "type": "inject",
+        "z": "4088c2307516d0c9",
+        "name": "datapoints",
+        "props": [
+            {
+                "p": "payload"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "{\"command\":\"datapoints\",\"devices\":[\"172.155.0.2\"]}",
+        "payloadType": "json",
+        "x": 140,
+        "y": 160,
+        "wires": [
+            [
+                "c36dc9f8246ff27f"
+            ]
+        ]
+    },
+    {
+        "id": "00cea92918181e4a",
+        "type": "bacnet endpoint",
+        "path": "http://localhost:9000/nodered_bacnet",
+        "tls": ""
+    }
+]

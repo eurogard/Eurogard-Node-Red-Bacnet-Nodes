@@ -1,0 +1,84 @@
+version: "3.7"
+
+networks:
+  node-red-net:
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.152.0.0/24
+
+services:
+  nodered-bacnetws-dev:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.dev
+    image: nodered-bacnetws-dev
+    container_name: nodered-bacnetws-dev
+    stdin_open: true # docker run -i
+    tty: true # docker run -t
+    networks:
+      node-red-net:
+        ipv4_address: 172.152.0.22
+    environment:
+      - TZ=Europe/Berlin
+    ports:
+      - "1880:1880"
+    # volumes:
+    #   - ./:/app
+    # entrypoint: ["npm", "start"]
+    entrypoint: sh
+    # depends_on:
+    #   - servicerouter-flask-nodered-local
+  # servicerouter-flask-nodered-local:
+  #   build:
+  #     context: ../node_modules/servicerouter-flask/
+  #     dockerfile: docker/Dockerfile.servicerouter-local
+  #   image: servicerouter-flask-nodered-local
+  #   container_name: servicerouter-flask-nodered-local
+  #   # entrypoint: ["python3", "/usr/sbin/servicerouter-flask/flask.fcgi"]
+  #   stdin_open: true # docker run -i
+  #   tty: true        # docker run -t
+  #   working_dir: /root/servicerouter-flask
+  #   volumes:
+  #     - ../node_modules/servicerouter-flask/:/root/servicerouter-flask
+  #   entrypoint: ["python3", "./flask.fcgi"]
+  #   working_dir: /root/servicerouter-flask
+  #   ports:
+  #     - 9000:9000
+  #   networks:
+  #     node-red-net:
+  #       ipv4_address: 172.152.0.200
+  # server1:
+  #   build:
+  #     context: ../node_modules/servicerouter-flask/docker/bacnet-sim
+  #     dockerfile: Dockerfile.bacnetsim
+  #   image: bacnet
+  #   container_name: server1
+  #   command: ["bacserv", "200001"]
+  #   networks:
+  #     node-red-net:
+  #       ipv4_address: 172.152.0.250
+  # server2:
+  #   build:
+  #     context: ../node_modules/servicerouter-flask/docker/bacnet-sim
+  #     dockerfile: Dockerfile.bacnetsim
+  #   image: bacnet
+  #   container_name: server2
+  #   command: ["bacserv", "200002"]
+  #   networks:
+  #     node-red-net:
+  #       ipv4_address: 172.152.0.251
+# services:
+#   node-red:
+#     image: nodered/node-red:latest
+#     environment:
+#       - TZ=Europe/Amsterdam
+#     ports:
+#       - "1880:1880"
+#     networks:
+#       - node-red-net
+#     volumes:
+#       - node-red-data:/data
+
+# volumes:
+#   node-red-data:

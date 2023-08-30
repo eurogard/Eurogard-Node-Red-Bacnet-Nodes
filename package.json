@@ -1,0 +1,35 @@
+{
+  "name": "eurogard-node-red-bacnet-node",
+  "version": "0.0.1",
+  "description": "The goal is to create a Node-Red node that makes Bacnet accessible by communicating with a bacnet-supporting edge device using websockets.",
+  "main": "index.js",
+  "scripts": {
+    "test": "mocha \"test/**/*_spec.js\"",
+    "start": "node $NODE_OPTIONS node_modules/node-red/red.js $FLOWS"
+  },
+  "repository": {
+    "type": "git",
+    "url": ""
+  },
+  "author": "Eurogard",
+  "license": "ISC",
+  "node-red": {
+    "nodes": {
+      "bacnet-active": "red/bacnet.js",
+      "bacnet-config": "red/config_nodes.js"
+    }
+  },
+  "dependencies": {
+    "mocha": "^9.2.2",
+    "node-red-contrib-s7": "^3.1.0",
+    "socket.io": "^4.5.0",
+    "socket.io-client": "^4.5.0"
+  },
+  "devDependencies": {
+    "node-red": "^2.2.2",
+    "node-red-node-test-helper": "^0.2.7"
+  },
+  "engines": {
+    "node": ">=12"
+  }
+}

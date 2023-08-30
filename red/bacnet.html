@@ -1,0 +1,540 @@
+<script type="text/javascript" src="lib/ui-tools.js"></script>
+<script type="text/javascript" src="lib/commands.js"></script>
+<script type="text/javascript">
+    ; (function () {
+        function extract_devices(headers) {
+            devices = []
+            acceptance = 'devices'
+            for (let i of headers) {
+                var keyType = i.find('.node-input-' + acceptance + '-name').typedInput('type')
+                var keyValue = i.find('.node-input-' + acceptance + '-name').typedInput('value')
+                let device = keyType == 'other' ? keyValue : keyType
+                if (!devices.includes(device)) {
+                    devices.push(device)
+                }
+            }
+            return devices
+        }
+        function extract_values(headers) {
+            devices = {}
+            acceptance = 'values'
+            for (let i of headers) {
+                // console.log(i.data)
+                var keyType = i.find('.node-input-' + acceptance + '-name').typedInput('type')
+                var keyValue = i.find('.node-input-' + acceptance + '-name').typedInput('value')
+                let device = keyType == 'other' ? keyValue : keyType
+                var valueType = i.find('.node-input-' + acceptance + '-value').typedInput('type')
+                var valueValue = i.find('.node-input-' + acceptance + '-value').typedInput('value')
+                let datapoint = valueType == 'all' ? undefined : valueValue
+                let datapoint_value = i.find('.node-input-datapoint-value').typedInput('value')
+
+                if (device !== '' && datapoint != '' && datapoint_value != '') {
+                    if (!devices.hasOwnProperty(device)) devices[device] = {}
+
+                    devices[device][datapoint] = datapoint_value
+                }
+            }
+            return devices
+        }
+
+        function extract_datapoints(headers) {
+            devices = {}
+            acceptance = 'datapoints'
+            for (let i of headers) {
+                // console.log(i.data)
+                var keyType = i.find('.node-input-' + acceptance + '-name').typedInput('type')
+                var keyValue = i.find('.node-input-' + acceptance + '-name').typedInput('value')
+                let device = keyType == 'other' ? keyValue : keyType
+                var valueType = i.find('.node-input-' + acceptance + '-value').typedInput('type')
+                var valueValue = i.find('.node-input-' + acceptance + '-value').typedInput('value')
+                let datapoint = valueType == 'all' ? undefined : valueValue
+
+                if (device !== '' && datapoint != '') {
+                    if (datapoint == undefined) {
+                        devices[device] = []
+                    } else if (devices.hasOwnProperty(device) && devices[device].length > 0)
+                        devices[device].push(datapoint)
+                    else if (!devices.hasOwnProperty(device)) devices[device] = [datapoint]
+                }
+            }
+            return devices
+        }
+
+        var commands = bacnetCommands
+        function make_device_showhide_fun(cmds, nodename) {
+            return function () {
+                let mp = {}
+                for (let v of cmds) {
+                    mp[v.message] = v.accepts
+                }
+                $('#node-input-command-' + nodename).on('change', function () {
+                    console.log('make_device_showhide_fun')
+                    let selected = $('#node-input-command-' + nodename).val()
+                    let curcmd = commands[nodename].commands.filter((x) => {
+                        return x.message == selected
+                    })[0]
+                    console.log('Now selected:')
+                    console.log({ curcmd })
+                    for (let acc of ['values', 'devices', 'datapoints']) {
+                        $('.bacnet-' + acc + '-row').hide()
+                    }
+                    if (mp[selected]) {
+                        // devices_oneditprepare(nodename,selected, this)
+                        console.log('Showing: ' + '.bacnet-' + mp[selected] + '-row')
+                        $('.bacnet-' + mp[selected] + '-row').show()
+                    }
+                })
+            }
+        }
+
+        function ws_label() {
+            var nodeid = this.endpoint
+            let cmd = ''
+            let name = 'bacnet ' + this.bac_type
+            console.log(this)
+            if (this.command) {
+                cmd = this.command.message
+            }
+
+            var wsNode = RED.nodes.node(nodeid)
+            if (!nodeid || !wsNode) {
+                return name + ': [ No Endpoint ]'
+            }
+            return this.name || (wsNode ? name + ': [ ' + cmd + ' ]' : 'bacnet ' + this.bac_type)
+        }
+
+        function ws_validateclient() {
+            return RED.nodes.node(this.endpoint) != null
+        }
+
+        function ws_validatedevice() {
+            return this.endpoint != null
+        }
+
+        var headerTypes = [
+            {
+                value: 'other',
+                label: RED._('node-red:httpin.label.other'),
+                icon: 'red/images/typedInput/az.png',
+            },
+        ]
+
+        var contentTypes = [
+            { value: 'all', label: 'All datapoints', hasValue: false },
+            { value: 'datapoint', label: 'Datapoint', icon: 'red/images/typedInput/az.png' },
+        ]
+
+        function make_cmd_select_dialog(cmds, nodename, cmd) {
+            console.log('make_cmd_select_dialog')
+            console.log({ cmd })
+            if (cmd == undefined) {
+                cmd = cmds[0]
+            }
+            console.log($(this))
+            let o = []
+            for (a of cmds) {
+                o.push({ value: a.message, label: a.description })
+            }
+            console.log('Command set:')
+            console.log(cmd['message'])
+            $('#node-input-command-' + nodename).typedInput({
+                types: [
+                    {
+                        value: cmd.message, //node.command.message,
+                        options: o,
+                    },
+                ],
+            })
+            $('#node-input-command-' + nodename).typedInput('value', cmd['message'])
+        }
+
+        function devices_oneditprepare(nodename, cmd, node) {
+            console.log('devices_oneditprepare')
+            console.log('this')
+            console.log(this)
+            console.log(cmd)
+            console.log(node.command)
+            console.log({ node })
+            console.log(cmd)
+            let selected = $('#node-input-command-' + nodename).val()
+            filtercmd = commands[nodename].commands.filter((x) => {
+                return x.message == selected
+            })[0]
+            var t = []
+            RED.nodes.eachConfig((x) => {
+                if (x.type === 'bacnet device') {
+                    let y = { label: x.path, value: x.path, hasValue: false }
+                    t.push(y)
+                }
+            })
+            for (let acceptance of ['devices', 'datapoints', 'values']) {
+                var htypes = headerTypes.concat(t)
+                var headerList = $('#node-input-' + acceptance + '-container-' + nodename)
+                    .css('min-height', '150px')
+                    .css('min-width', '450px')
+                    .editableList({
+                        addItem: function (container, i, data) {
+                            var row = $('<div/>')
+                                .css({
+                                    overflow: 'hidden',
+                                    whiteSpace: 'nowrap',
+                                    display: 'flex',
+                                })
+                                .appendTo(container)
+                            // setup devicecolumn
+                            var devicesCell = $('<div/>').css({ 'flex-grow': 1 }).appendTo(row)
+                            var devicesInput = $('<input/>', {
+                                class: 'node-input-' + acceptance + '-name',
+                                type: 'text',
+                                style: 'width: 100%',
+                            })
+                                .appendTo(devicesCell)
+                                .typedInput({ types: headerTypes.concat(t) })
+                            // setup datapointcolumn
+                            var datapointsCell = $('<div/>')
+                                .css({ 'flex-grow': 1, 'margin-left': '10px' })
+                                .appendTo(row)
+                            if (acceptance == 'devices') {
+                            } else if (acceptance == 'values') {
+                                var datapointInput = $('<input/>', {
+                                    class: 'node-input-' + acceptance + '-value',
+                                    type: 'text',
+                                    style: 'width: 50%',
+                                })
+                                    .appendTo(datapointsCell)
+                                    .typedInput({ types: ['str'] })
+                                var valuesInput = $('<input/>', {
+                                    class: 'node-input-datapoint-value',
+                                    type: 'text',
+                                    style: 'width: 50%',
+                                })
+                                    .appendTo(datapointsCell)
+                                    .typedInput({ types: ['str'] })
+                                if (data.dpval) {
+                                    valuesInput.typedInput('value', data.dpval)
+                                }
+                            } else {
+                                var datapointInput = $('<input/>', {
+                                    class: 'node-input-' + acceptance + '-value',
+                                    type: 'text',
+                                    style: 'width: 100%',
+                                })
+                                    .appendTo(datapointsCell)
+                                    .typedInput({ types: contentTypes })
+                            }
+
+                            // var matchedDevice = devicesTypes.filter(function(ht) {
+                            //   return ht.value === data.h
+                            // });
+                            // if (matchedDevice.length === 0) {
+                            //   devicesInput.typedInput('type', 'other');
+                            //   devicesInput.typedInput('value', data.h);
+                            //
+                            // } else {
+                            //   datapointInput.typedInput('value', data.v);
+                            // }
+                            // if (acceptance !== "devices") {
+                            //   devicesInput.typedInput('type', data.h);
+                            //   if (acceptance !== "values") {
+                            //     if (data.h === "content-type") {
+                            //       if (acceptance !== "values") {
+                            //         matchedDevice = datapointsTypes.filter(function(ct) {
+                            //           return ct.value === data.v;
+                            //         });
+                            //         if (matchedDevice.length === 0) {
+                            //           datapointInput.typedInput('type', 'other');
+                            //           datapointInput.typedInput('value', data.v);
+                            //         } else {
+                            //           datapointInput.typedInput('type', data.v);
+                            //         }
+                            //       }
+                            //     } else {
+                            //       if (acceptance !== "values")
+                            //         datapointInput.typedInput('value', data.v);
+                            //     }
+                            //   }
+                            // }
+                            //
+                            matchedDevice = headerTypes.filter(function (ht) {
+                                return ht.value === data.h
+                            })
+                            if (matchedDevice.length === 0) {
+                                devicesInput.typedInput('type', 'other')
+                                devicesInput.typedInput('value', data.h)
+                            } else {
+                                devicesInput.typedInput('type', data.h)
+                            }
+                            if (acceptance === 'datapoints') {
+                                if (data.v === 'all') {
+                                    datapointInput.typedInput('type', 'all')
+                                } else {
+                                    datapointInput.typedInput('type', 'other')
+                                    datapointInput.typedInput('value', data.v)
+                                }
+                            }
+                        },
+                        removable: true,
+                    })
+
+                if (node.parameters !== undefined && Object.entries(node.parameters).length > 0) {
+                    let devices = node.parameters.devices
+
+                    if (node.parameters == {}) {
+                        console.log('devices empty')
+                        return
+                    }
+
+                    for (var key in devices) {
+                        if (acceptance == 'devices' && devices instanceof Array) {
+                            headerList.editableList('addItem', { h: key })
+                        } else if (
+                            acceptance == 'datapoints' &&
+                            devices instanceof Object &&
+                            devices[key] instanceof Array
+                        ) {
+                            if (Object.entries(devices[key]).length == 0) {
+                                headerList.editableList('addItem', { h: key, v: 'all' })
+                            } else {
+                                for (var point of devices[key]) {
+                                    headerList.editableList('addItem', { h: key, v: point })
+                                }
+                            }
+                        } else if (
+                            acceptance == 'values' &&
+                            devices instanceof Object &&
+                            devices[key] instanceof Object
+                        ) {
+                            for (var k in devices[key]) {
+                                let point = devices[key][k]
+                                console.log({ key })
+                                console.log({ k })
+                                console.log({ point })
+                                let devk = devices[key]
+                                console.log({ devk })
+                                headerList.editableList('addItem', { h: key, v: k, dpval: point })
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        function devices_oneditsave(nodename, cmd, node) {
+            node.devices = {}
+            node.parameters = {}
+            console.log('NODE')
+            console.log(node)
+            console.log('NODECOMMAND')
+            console.log(node.command)
+            console.log('NODECOMMANDS')
+            console.log(node.commands)
+            let selected = $('#node-input-command-' + nodename).val()
+            console.log('HTMLCOMMAND')
+            console.log({ selected })
+            filtercmd = node.commands.filter((x) => {
+                return x.message == selected
+            })[0]
+            node.command = filtercmd
+            if (filtercmd == undefined) {
+                return
+            }
+            console.log({ filtercmd })
+            let acceptance = filtercmd['accepts']
+            if (acceptance == false) return
+            console.log({ acceptance })
+
+            var headers = $('#node-input-' + acceptance + '-container-' + nodename).editableList('items')
+
+            let extract_funs = {
+                devices: extract_devices,
+                values: extract_values,
+                datapoints: extract_datapoints,
+            }
+            devices = extract_funs[acceptance](headers)
+            node.parameters = { devices: devices }
+            console.log('NODE.PARAMETERS')
+            console.log(node.parameters)
+        }
+        function devices_oneditresize(size, nodename) {
+            var rows = $('#dialog-form>div:not(.node-input-devices-container-row)')
+            var height = size.height
+            for (var i = 0; i < rows.length; i++) {
+                height -= $(rows[i]).outerHeight(true)
+            }
+            var editorRow = $('#dialog-form>div.node-input-devices-container-row')
+            height -= parseInt(editorRow.css('marginTop')) + parseInt(editorRow.css('marginBottom'))
+
+            $('#node-input-devices-container-' + nodename).editableList('height', height)
+        }
+        // var g = this.context().global;
+        // var commands = g.get("cmd")
+        // var commands = {}
+        function make_nodes() {
+            for (let bac_node in commands) {
+                console.log(bac_node)
+                let bac_commands = commands[bac_node].commands
+                // let cmd_select_diag = make_cmd_select_dialog(bac_commands, bac_node)
+                let list_show_fun = make_device_showhide_fun(bac_commands, bac_node)
+                console.log('bacnet ' + bac_node)
+                RED.nodes.registerType('bacnet ' + bac_node, {
+                    category: 'bacnet',
+                    defaults: {
+                        name: { value: '' },
+                        endpoint: { type: 'bacnet endpoint', validate: ws_validateclient, required: true },
+                        command: {
+                            value: bac_commands[0],
+                            required: true,
+                            validate: RED.validators.regex(/^((?!\/debug\/ws).)*$/),
+                        },
+                        bac_type: { value: bac_node, required: true },
+                        parameters: { value: {}, required: false },
+                        commands: { value: bac_commands, required: true },
+                    },
+                    color: 'rgb(215, 215, 160)',
+                    inputs: 1,
+                    outputs: 1,
+                    icon: commands[bac_node].icon,
+                    align: commands[bac_node].align,
+                    labelStyle: function () {
+                        return this.name ? 'node_label_italic' : ''
+                    },
+                    label: ws_label,
+                    oneditprepare: function () {
+                        list_show_fun()
+                        make_cmd_select_dialog(bac_commands, bac_node, this.command)
+                        // devices_oneditprepare(bac_node, this.command, this)
+                        UiTools.multiEditableListLegacy(this.parameters.devices, this.bac_type)
+                    },
+                    oneditsave: function () {
+                        devices_oneditsave(bac_node, this.command, this)
+                        // this.command = $("#node-input-command-"+bac_node).val()
+                        console.log('Editsave. devices:')
+                        console.log(this.parameters)
+                        console.log('Editsave. command:')
+                        console.log(this.command)
+                    },
+                    oneditresize: function (size) {
+                        devices_oneditresize(size, bac_node)
+                    },
+                })
+            }
+        }
+        make_nodes()
+    })()
+</script>
+
+<!-- Bacnet Control node -->
+<script type="text/html" data-template-name="bacnet control">
+  <div class="form-row" id="bacnet endpoint-row">
+    <label for="node-input-endpoint"
+      ><i class="fa fa-bookmark"></i> <span data-i18n="node-red:websocket.label.url"></span
+    ></label>
+    <input type="text" id="node-input-endpoint" />
+  </div>
+  <div class="form-row">
+    <label for="node-input-command"><i class="fa fa-bolt"></i> Command</label>
+    <input type="text" id="node-input-command-control" />
+  </div>
+  <div class="form-row hide bacnet-devices-row">
+    <div class="form-row node-input-devices-container-row">
+      <ol id="node-input-devices-container-control"></ol>
+    </div>
+  </div>
+  <div class="form-row hide bacnet-datapoints-row">
+    <div class="form-row node-input-datapoints-container-row">
+      <ol id="node-input-datapoints-container-control"></ol>
+    </div>
+  </div>
+  <div class="form-row hide bacnet-values-row">
+    <div class="form-row node-input-values-container-row">
+      <ol id="node-input-values-container-control"></ol>
+    </div>
+  </div>
+  <div class="form-row">
+    <label for="node-input-name"
+      ><i class="fa fa-tag"></i> <span data-i18n="node-red:common.label.name"></span
+    ></label>
+    <input type="text" id="node-input-name" data-i18n="node-red:[placeholder]common.label.name" />
+  </div>
+</script>
+
+<!-- Bacnet in node -->
+<script type="text/html" data-template-name="bacnet in">
+  <div class="form-row" id="bacnet endpoint-row">
+    <label for="node-input-endpoint"
+      ><i class="fa fa-bookmark"></i> <span data-i18n="node-red:websocket.label.url"></span
+    ></label>
+    <input type="text" id="node-input-endpoint" />
+  </div>
+  <div class="form-row">
+    <label for="node-input-command"><i class="fa fa-bolt"></i> Command</label>
+    <input type="text" id="node-input-command-in" />
+  </div>
+  <div class="form-row hide bacnet-devices-row">
+    <div class="form-row node-input-devices-container-row">
+      <ol id="node-input-devices-container-in"></ol>
+    </div>
+  </div>
+  <div class="form-row hide bacnet-datapoints-row">
+    <div class="form-row node-input-datapoints-container-row">
+      <ol id="node-input-datapoints-container-in"></ol>
+    </div>
+  </div>
+  <div class="form-row hide bacnet-values-row">
+    <div class="form-row node-input-values-container-row">
+      <ol id="node-input-values-container-in"></ol>
+    </div>
+  </div>
+  <div class="form-row">
+    <label for="node-input-name"
+      ><i class="fa fa-tag"></i> <span data-i18n="node-red:common.label.name"></span
+    ></label>
+    <input type="text" id="node-input-name" data-i18n="node-red:[placeholder]common.label.name" />
+  </div>
+</script>
+
+<!-- Bacnet out node -->
+<script type="text/html" data-template-name="bacnet out">
+  <div class="form-row" id="bacnet endpoint-row">
+    <label for="node-input-endpoint"
+      ><i class="fa fa-bookmark"></i> <span data-i18n="node-red:websocket.label.url"></span
+    ></label>
+    <input type="text" id="node-input-endpoint" />
+  </div>
+  <div class="form-row">
+    <label for="node-input-command"><i class="fa fa-bolt"></i> Command</label>
+    <input type="text" id="node-input-command-out" />
+  </div>
+  <div class="form-row hide bacnet-devices-row">
+    <div class="form-row node-input-devices-container-row">
+      <ol id="node-input-devices-container-out"></ol>
+    </div>
+  </div>
+  <div class="form-row hide bacnet-datapoints-row">
+    <div class="form-row node-input-datapoints-container-row">
+      <ol id="node-input-datapoints-container-out"></ol>
+    </div>
+  </div>
+  <div class="form-row hide bacnet-values-row">
+    <div class="form-row node-input-values-container-row">
+      <ol id="node-input-values-container-out"></ol>
+    </div>
+  </div>
+  <div class="form-row">
+    <label for="node-input-name"
+      ><i class="fa fa-tag"></i> <span data-i18n="node-red:common.label.name"></span
+    ></label>
+    <input type="text" id="node-input-name" data-i18n="node-red:[placeholder]common.label.name" />
+  </div>
+</script>
+<script type="text/html" data-help-name="bacnet in">
+  <p>Read values from bacnet devices in the network</p>
+</script>
+
+<script type="text/html" data-help-name="bacnet out">
+  <p>Write values to bacnet devices in the network</p>
+</script>
+
+<script type="text/html" data-help-name="bacnet control">
+  <p>Get information about the available bacnet devices in the network</p>
+</script>
